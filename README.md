@@ -49,8 +49,8 @@ There is three method to get the shop, the first uses an API key from [fnbr.co](
 ```js
 const  fortnite  =  require("fortnite-9812")
 const  client  =  new  fortnite.Client({
-//TRN: "<TRN API key if you have one>", Not required for this example
-fnbrToken:  "<fnbr API key if you have one>"
+	//TRN: "<TRN API key if you have one>", Not required for this example
+	fnbrToken:  "<fnbr API key if you have one>"
 })//from now, you can use all the function that require the client
 
 client.fnbrShop()
