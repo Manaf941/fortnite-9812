@@ -1,6 +1,6 @@
 {
   "name": "fortnite-9812",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A nodejs module for retrieving data from TRN, fnbr.co and https://fortniteapi.com/",
   "main": "index.js",
   "dependencies": {

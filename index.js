@@ -76,7 +76,7 @@ module.exports.upcoming = function(){//everyone can use this endpoint but only e
         fetch("https://fortnite-public-api.theapinetwork.com/prod09/upcoming/get", {
             method: "get"
         }).then(res => {
-            if(res.status == 404)return Reject("error: cannot get the upcomings item")
+            if(res.status !== 200)return Reject("error: cannot get the upcomings item")
             res.json()
             .then(json => resolve(json))
         })
@@ -103,9 +103,9 @@ module.exports.Client.prototype.fnbrUpcoming = function(){//only use with an API
     })
 }
 
-function getId(username){
+function getID(username){
     return new Promise((resolve, reject) => {
-        var url = `https://fortnite-public-api.theapinetwork.com/prod09/users/id?username=${username}`
+        var url = encodeURI(`https://fortnite-public-api.theapinetwork.com/prod09/users/id?username=${username}`)
         fetch(url, {
             method: "get"
         }).then(res => {
@@ -119,7 +119,7 @@ function getId(username){
     })
 }
 
-module.exports.getId = getId
+module.exports.getID = getID
 
 module.exports.getStatsId = function(id, platform){
     return new Promise((resolve, reject) => {
@@ -140,8 +140,9 @@ module.exports.getStatsId = function(id, platform){
 
 module.exports.getStatsName = function(username, platform){
     return new Promise((resolve, reject) => {
-        getId(username)
+        getID(username)
         .then(user => {
+            if(platform !== "pc" && platform !== "ps4" && platform !== "xb1")return reject(`The platform is invalid. try: pc, xb1 or ps4, given: ${platform}`)
             if(!user.platforms.includes(platform))return reject(`The user does not have ${platform} in his platform list (${user.platforms})`)
             var url = `https://fortnite-public-api.theapinetwork.com/prod09/users/public/br_stats?user_id=${user.uid}&platform=${platform}`
             fetch(url, {
@@ -178,6 +179,7 @@ module.exports.Client.prototype.fnbrStats = function(){//only with an API key fr
             method: "get",
             headers: {"x-api-key": this.fnbrToken}
         }).then(res => {
+            if(res.status == 401)return reject("Unauthorized")
             if(res.status !== 200)return reject("An error occured.")
             res.json()
             .then(json => resolve(json))
@@ -199,8 +201,13 @@ module.exports.Client.prototype.fnbrImage = function(object){//only with an API 
         fetch(url, {
             method: "get",
             headers: {"x-api-key": this.fnbrToken}
-        }).then(res => res.json())
-        .then(json => resolve(json))
+        }).then(res => {
+            if(res.status == 400)return reject("unknown type")
+            if(res.status == 401)return reject("unauthorized")
+            if(res.status !== 200)return reject("unavaillable")
+            res.json()
+            .then(json => resolve(json))
+        })
     })
 }
 
@@ -253,8 +260,8 @@ module.exports.Client.prototype.TRNShop = function(){//only with an API key from
                 "TRN-Api-Key": this.TRN
             }
         }).then(res => {
-            if(res.status == 401)return reject("Unauthorized, the API key can be missing or incorrect. make sure you have enter the correct one in the client constructor")
-            if(res.status !== 200)return reject("an unknown error has occured")
+            if(res.status == 401 || res.status == 403)return reject("Unauthorized, the API key can be missing or incorrect. make sure you have enter the correct one in the client constructor")
+            if(res.status !== 200)return reject("an unknown error has occured, status: " + res.status)
             res.json()
             .then(json => resolve(json))
         })
