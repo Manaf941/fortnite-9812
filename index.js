@@ -34,8 +34,9 @@ module.exports.Client.prototype.fnbrShop = function(){//note: this need a fnbr t
 
 module.exports.shop = function(args1){//everyone can use this endpoint without an API key from fnbr.co, the lang can be ["en", "de", "fr", "zh", "it", "ja", "es"]
     return new Promise((resolve, Reject) => {
-        var lang = args1
-        var langs = ["en", "de"]
+        if(!args1)var lang = "en"
+        else var lang = args1
+        //var langs = ["en", "de"]
         if(!lang || !langs.includes(lang)){
             console.error("please select a VALID language the next time. the shop will be retrieved in english now.")
             var lang = "en"
@@ -53,13 +54,11 @@ module.exports.shop = function(args1){//everyone can use this endpoint without a
     })
 }
 
-module.exports.brNews = function(lang){//the lang can be ["en", "de", "fr", "zh", "it", "ja", "es"], everyone can use this endpoint without signed in with a token or else.
+module.exports.brNews = function(args1){//the lang can be ["en", "de", "fr", "zh", "it", "ja", "es"], everyone can use this endpoint without signed in with a token or else.
     return new Promise((resolve, Reject) => {
-        var langs = ["en", "de", "fr", "zh", "it", "ja", "es"]
-        if(!lang || !langs.includes(lang)){
-            console.error("please select a VALID language the next time. the news will be retrieved in english now.")
-            var lang = "en"
-        }
+        if(!args1)var lang = "en"
+        else var lang = args1
+        //var langs = ["en", "de", "fr", "zh", "it", "ja", "es"]
         var url = "https://fortnite-public-api.theapinetwork.com/prod09/br_motd/get?language=" + lang
         fetch(url, {
             method: "get",
@@ -243,10 +242,10 @@ module.exports.text = function(object){//generate an image with the word that yo
         else args.push("fontsize=" + object.size)
         if(!object.color) args.push("textcolor=000000")
         else args.push("textcolor=" + object.color)
-        args.push("text=" + object.text.replace(/%/gi, "%25%0A").replace(/\+/gi, "%2B").replace(/&/gi, "%26").replace(/¦/gi, "").replace(/°/gi, "%C2%B0"))
+        args.push(encodeURI("text=" + object.text.replace(/%/gi, "%25")).replace(/¦/gi, "").replace(/&/gi, "%26").replace(/#/gi, "%23").replace(/\+/gi, "%2B").replace(/°/gi, "%C2%B0"))
         if(args[2] == "text=")return reject("You need to precise the text to generate")
 
-        var url = encodeURI("http://fortnitefontgenerator.com/img.php?" + args.join("&")).replace(/#/gi, "%23")
+        var url = "http://fortnitefontgenerator.com/img.php?" + args.join("&")
         resolve(url)
     })
 }
@@ -305,5 +304,40 @@ module.exports.challenge = function(s){//everyone can use this endpoint and only
                 .then(json => resolve(json))
             })
         }
+    })
+}
+
+
+module.exports.Client.prototype.fnbrGet = function(url){//perform a get request with the fnbr.co api key if you have one
+    return new Promise((resolve, reject) => {
+        if(!this.fnbrToken)return reject("You have to use a FNBR API key for this method")
+        if(!url)return reject("You have to insert a VALID URL in the function")
+        fetch(url, {
+            method: "get",
+            headers: {
+               "x-api-key": this.fnbrToken
+            }
+        }).then(res => {
+            if(res.status == 404)return reject(res.status)
+            if(res.status == 401)return reject("Unauthorized")
+            res.text()
+            .then(text => {
+                try{
+                    var json = JSON.parse(text);
+                    resolve(json)
+                }catch(e){//it will allways return a value even if it is not json
+                    resolve(text)
+                }
+            })
+        }).catch(err => reject(err))
+    })
+}
+
+module.exports.getItems = function(){//get an array of ALL items in the game.
+    return new Promise((resolve) => {
+        fetch("https://fortnite-public-api.theapinetwork.com/prod09/items/list", {
+            method: "get"
+        }).then(res => res.json())
+        .then(json => resolve(json))
     })
 }
